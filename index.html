@@ -5,7 +5,7 @@
   <title>Make a Wish</title>
   <style>
     body {
-      margin: 0; background: #000; color: #fff;
+      margin: 0; background: #000; color: #000;
       font-family: system-ui, sans-serif; display: flex;
       justify-content: center; align-items: center;
       height: 100vh; text-align: center; overflow: hidden;
@@ -23,7 +23,7 @@
 
     .video-player.active { display: block; }
     
-    /* Overlay Content (Text & Cake) */
+    /* Overlay Content Layer */
     .content-overlay {
       position: relative;
       z-index: 10;
@@ -32,41 +32,76 @@
     .screen { display: none; }
     .screen.active { display: block; }
 
+    /* Hand-shaped Skin Color Button Design */
     #start-btn {
-      font-size: 1.4rem; padding: 16px 32px; cursor: pointer;
-      background: #ff4081; border: none; border-radius: 30px; color: white;
-      box-shadow: 0 4px 15px rgba(255, 64, 129, 0.4);
+      font-size: 1.3rem;
+      font-weight: 600;
+      padding: 16px 36px 16px 28px;
+      cursor: pointer;
+      background-color: #f1c27d; /* Natural skin tone */
+      border: 3px solid #e0ac69;
+      color: #3d2314; /* Deep brown text for contrast */
+      
+      /* Organic hand/pointer badge shaping */
+      border-radius: 40px 15px 40px 40px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.4);
+      
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      transition: transform 0.2s ease, background-color 0.2s ease;
     }
 
-    .candle { font-size: 6rem; margin: 20px 0; }
-    #status { font-size: 1.1rem; color: #ddd; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+    #start-btn:active {
+      transform: scale(0.95);
+      background-color: #e0ac69;
+    }
+
+    /* Step 2 Blow Screen styling - Pure Black Text */
+    .step2-title {
+      color: #000000;
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 10px;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.6);
+    }
+
+    .candle { font-size: 6rem; margin: 15px 0; }
+
+    #status {
+      font-size: 1.2rem;
+      color: #000000;
+      font-weight: 700;
+      margin-top: 10px;
+      text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+    }
   </style>
 </head>
 <body>
 
   <!-- VIDEOS LAYER -->
-  <!-- Video 1 plays in background for Steps 1 & 2 -->
-  <video id="video1" class="video-player active" autoplay loop muted playsinline src="video1.mp4"></video>
+  <video id="video1" class="video-player active" autoplay loop muted playsinline src="video1.mp4?v=2"></video>
   <video id="video2" class="video-player" playsinline src="video2.mp4"></video>
   <video id="video3" class="video-player" playsinline src="video3.mp4"></video>
 
   <!-- OVERLAY CONTENT LAYER -->
   <div class="content-overlay">
-    <!-- Step 1: Start Button -->
+    <!-- Step 1: Skin-tone Hand Button -->
     <div id="step-1" class="screen active">
-      <button id="start-btn">touch here princess 🐧</button>
+      <button id="start-btn">
+        <span>👆</span> touch here princess 🐧
+      </button>
     </div>
 
-    <!-- Step 2: Candle Blowing Screen -->
+    <!-- Step 2: Candle Blowing Screen (Black Text) -->
     <div id="step-2" class="screen">
-      <h2>Blow on your microphone! 🌬️</h2>
+      <h2 class="step2-title">Blow on your microphone! 🌬️</h2>
       <div class="candle">🎂</div>
       <p id="status">Listening for blow...</p>
     </div>
   </div>
 
   <script>
-    // Always reset URL to root on reload so it never stays stuck on a sub-page
     if (window.location.hash) {
       window.location.href = window.location.pathname;
     }
@@ -85,9 +120,7 @@
       step1.classList.remove('active');
       step2.classList.add('active');
       
-      // Try to unmute Video 1 now that the user interacted
       video1.muted = false;
-      
       startMicDetection();
     });
 
@@ -111,10 +144,9 @@
           }
           let average = sum / dataArray.length;
 
-          // Blow threshold reached
           if (average > 45) {
             statusText.innerText = "Candle blown!";
-            stream.getTracks().forEach(track => track.stop()); // Turn off mic
+            stream.getTracks().forEach(track => track.stop());
             
             setTimeout(() => {
               playVideoSequence();
@@ -133,19 +165,16 @@
       }
     }
 
-    // Step 3 & 4: Transition to Video 2, then Video 3
+    // Step 3 & 4: Video 2 -> Video 3
     function playVideoSequence() {
-      // Hide text overlays and stop Video 1
       step2.classList.remove('active');
       video1.classList.remove('active');
       video1.pause();
 
-      // Start Video 2 with audio
       video2.classList.add('active');
       video2.currentTime = 0;
       video2.play();
 
-      // When Video 2 Ends -> Play Video 3
       video2.addEventListener('ended', () => {
         video2.classList.remove('active');
         video3.classList.add('active');
@@ -153,7 +182,6 @@
         video3.play();
       });
 
-      // When Video 3 Ends -> Pause on last frame (No Loop)
       video3.addEventListener('ended', () => {
         video3.pause();
       });
