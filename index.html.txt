@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Make a Wish</title>
+  <style>
+    body {
+      margin: 0; background: #000; color: #fff;
+      font-family: sans-serif; display: flex;
+      justify-content: center; align-items: center;
+      height: 100vh; text-align: center;
+    }
+    .screen { display: none; }
+    .active { display: block; }
+    #start-btn {
+      font-size: 1.5rem; padding: 15px 30px; cursor: pointer;
+      background: #ff4081; border: none; border-radius: 25px; color: white;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="step-1" class="screen active">
+    <button id="start-btn">touch here princess 🐧</button>
+  </div>
+
+  <div id="step-2" class="screen">
+    <h2>Blow out the candle! 🎂</h2>
+    <button onclick="onCandleBlown()">[Simulate Blowing Candle]</button>
+  </div>
+
+  <script>
+    // Click button to show candle screen
+    document.getElementById('start-btn').addEventListener('click', () => {
+      document.getElementById('step-1').classList.remove('active');
+      document.getElementById('step-2').classList.add('active');
+    });
+
+    // Candle blown: Redirect to Webpage 2
+    function onCandleBlown() {
+      window.location.href = "videos.html";
+    }
+  </script>
+</body>
+</html>
