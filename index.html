@@ -5,40 +5,90 @@
   <title>Make a Wish</title>
   <style>
     body {
-      margin: 0; background: #000; color: #fff;
-      font-family: sans-serif; display: flex;
+      margin: 0; background: #0c0c14; color: #fff;
+      font-family: system-ui, sans-serif; display: flex;
       justify-content: center; align-items: center;
       height: 100vh; text-align: center;
     }
     .screen { display: none; }
     .active { display: block; }
     #start-btn {
-      font-size: 1.5rem; padding: 15px 30px; cursor: pointer;
-      background: #ff4081; border: none; border-radius: 25px; color: white;
+      font-size: 1.4rem; padding: 16px 32px; cursor: pointer;
+      background: #ff4081; border: none; border-radius: 30px; color: white;
+      box-shadow: 0 4px 15px rgba(255, 64, 129, 0.4);
     }
+    .candle { font-size: 5rem; margin: 20px 0; }
+    #status { font-size: 1.1rem; color: #aaa; margin-top: 10px; }
   </style>
 </head>
 <body>
 
+  <!-- Step 1: Start Button -->
   <div id="step-1" class="screen active">
     <button id="start-btn">touch here princess 🐧</button>
   </div>
 
+  <!-- Step 2: Interactive Blow Screen -->
   <div id="step-2" class="screen">
-    <h2>Blow out the candle! 🎂</h2>
-    <button onclick="onCandleBlown()">[Simulate Blowing Candle]</button>
+    <div class="candle">🎂</div>
+    <h2>Blow on your microphone! 🌬️</h2>
+    <p id="status">Listening for blow...</p>
   </div>
 
   <script>
-    // Click button to show candle screen
-    document.getElementById('start-btn').addEventListener('click', () => {
-      document.getElementById('step-1').classList.remove('active');
-      document.getElementById('step-2').classList.add('active');
+    const startBtn = document.getElementById('start-btn');
+    const step1 = document.getElementById('step-1');
+    const step2 = document.getElementById('step-2');
+    const statusText = document.getElementById('status');
+
+    startBtn.addEventListener('click', async () => {
+      step1.classList.remove('active');
+      step2.classList.add('active');
+      startMicDetection();
     });
 
-    // Candle blown: Redirect to Webpage 2
-    function onCandleBlown() {
-      window.location.href = "videos.html";
+    async function startMicDetection() {
+      try {
+        // Request microphone access
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const analyser = audioContext.createAnalyser();
+        const microphone = audioContext.createMediaStreamSource(stream);
+        
+        analyser.fftSize = 256;
+        microphone.connect(analyser);
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        function checkBlow() {
+          analyser.getByteFrequencyData(dataArray);
+          
+          // Calculate average volume level
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) {
+            sum += dataArray[i];
+          }
+          let average = sum / dataArray.length;
+
+          // Threshold for blowing (adjust 45 if too sensitive or hard)
+          if (average > 45) {
+            statusText.innerText = "Candle blown! Redirecting...";
+            stream.getTracks().forEach(track => track.stop()); // Stop mic
+            setTimeout(() => {
+              window.location.href = "videos.html";
+            }, 500);
+            return;
+          }
+          requestAnimationFrame(checkBlow);
+        }
+
+        checkBlow();
+      } catch (err) {
+        statusText.innerText = "Microphone access denied. Click anywhere to skip.";
+        document.body.addEventListener('click', () => {
+          window.location.href = "videos.html";
+        }, { once: true });
+      }
     }
   </script>
 </body>
