@@ -4,34 +4,64 @@
   <meta charset="UTF-8">
   <title>Make a Wish</title>
   <style>
+    /* 1. Basic Setup & Typography */
     body {
       margin: 0; background: #0c0c14; color: #fff;
       font-family: system-ui, sans-serif; display: flex;
       justify-content: center; align-items: center;
-      height: 100vh; text-align: center;
+      height: 100vh; text-align: center; overflow: hidden; /* Hide scrollbars */
     }
-    .screen { display: none; }
+
+    /* 2. Style for the Background Video */
+    .bg-video {
+      position: fixed; /* Fixed position, stays in place */
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover; /* Cover the whole screen */
+      z-index: -100; /* Place behind everything */
+      opacity: 0.7; /* Optional: Slight dim for better text contrast */
+    }
+
+    /* 3. Style for the Interactive Elements */
+    .screen { display: none; z-index: 10; /* Ensure content is above video */ }
     .active { display: block; }
+
     #start-btn {
       font-size: 1.4rem; padding: 16px 32px; cursor: pointer;
       background: #ff4081; border: none; border-radius: 30px; color: white;
       box-shadow: 0 4px 15px rgba(255, 64, 129, 0.4);
+      transition: all 0.2s ease;
     }
-    .candle { font-size: 5rem; margin: 20px 0; }
+    #start-btn:hover { background: #e91e63; }
+
+    .cake-wrapper {
+      position: relative;
+      display: inline-block;
+      margin: 20px 0;
+    }
+    
+    .candle { font-size: 6rem; } /* Large cake emoji */
+    
     #status { font-size: 1.1rem; color: #aaa; margin-top: 10px; }
   </style>
 </head>
 <body>
+
+  <!-- Background Video 1 -->
+  <!-- Crucial: 'autoplay' ensures it plays on load, 'loop' keeps it going, 'muted' bypasses browser blocks -->
+  <video id="video1" class="bg-video" autoplay loop muted playsinline src="video1.mp4"></video>
 
   <!-- Step 1: Start Button -->
   <div id="step-1" class="screen active">
     <button id="start-btn">touch here princess 🐧</button>
   </div>
 
-  <!-- Step 2: Interactive Blow Screen -->
+  <!-- Step 2: Interactive Blow Screen (With Background Video 1 Playing) -->
   <div id="step-2" class="screen">
-    <div class="candle">🎂</div>
     <h2>Blow on your microphone! 🌬️</h2>
+    <div class="cake-wrapper">
+      <div class="candle">🎂</div>
+    </div>
     <p id="status">Listening for blow...</p>
   </div>
 
@@ -40,10 +70,17 @@
     const step1 = document.getElementById('step-1');
     const step2 = document.getElementById('step-2');
     const statusText = document.getElementById('status');
+    const bgVideo1 = document.getElementById('video1');
 
-    startBtn.addEventListener('click', async () => {
+    // Button Click: Show Candle Screen
+    startBtn.addEventListener('click', () => {
       step1.classList.remove('active');
       step2.classList.add('active');
+      
+      // Attempt to ensure Video 1 is unmuted after interaction (for iOS)
+      bgVideo1.muted = false;
+
+      // Start the actual blow detection
       startMicDetection();
     });
 
@@ -74,9 +111,11 @@
           if (average > 45) {
             statusText.innerText = "Candle blown! Redirecting...";
             stream.getTracks().forEach(track => track.stop()); // Stop mic
+            
+            // Redirect after a short delay
             setTimeout(() => {
               window.location.href = "videos.html";
-            }, 500);
+            }, 600);
             return;
           }
           requestAnimationFrame(checkBlow);
@@ -84,10 +123,8 @@
 
         checkBlow();
       } catch (err) {
-        statusText.innerText = "Microphone access denied. Click anywhere to skip.";
-        document.body.addEventListener('click', () => {
-          window.location.href = "videos.html";
-        }, { once: true });
+        statusText.innerText = "Microphone access denied. You can't blow the candle.";
+        // On mobile, you might want a manual skip button here as a fallback
       }
     }
   </script>
