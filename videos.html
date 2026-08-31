@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Watch Videos</title>
+  <style>
+    body { margin: 0; background: #000; overflow: hidden; }
+    video { width: 100vw; height: 100vh; object-fit: cover; display: none; }
+    video.active { display: block; }
+  </style>
+</head>
+<body>
+
+  <video id="video2" class="active" autoplay playsinline src="video2.mp4"></video>
+
+  <video id="video3" playsinline src="video3.mp4"></video>
+
+  <script>
+    const video2 = document.getElementById('video2');
+    const video3 = document.getElementById('video3');
+
+    // Autoplay Video 2 as soon as Webpage 2 loads
+    video2.play().catch(error => {
+      console.log("Autoplay waiting for user interaction:", error);
+    });
+
+    // Switch to Video 3 when Video 2 finishes
+    video2.addEventListener('ended', () => {
+      video2.classList.remove('active');
+      video3.classList.add('active');
+      video3.play();
+    });
+
+    // Stop on the last frame of Video 3 (No Loop)
+    video3.addEventListener('ended', () => {
+      video3.pause();
+    });
+  </script>
+</body>
+</html>
