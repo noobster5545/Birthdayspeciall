@@ -11,7 +11,7 @@
       height: 100vh; text-align: center; overflow: hidden;
     }
 
-    /* Video Player (Full Screen) */
+    /* Full Screen Video Players */
     .video-player {
       position: fixed;
       top: 0; left: 0;
@@ -20,7 +20,6 @@
       display: none;
       z-index: 1;
     }
-
     .video-player.active { display: block; }
     
     /* Overlay Content Layer */
@@ -28,42 +27,47 @@
       position: relative;
       z-index: 10;
     }
-
     .screen { display: none; }
     .screen.active { display: block; }
 
-    /* Hand-shaped Skin Color Button Design */
+    /* Skin Tone Hand-shaped Button */
     #start-btn {
       font-size: 1.3rem;
       font-weight: 600;
       padding: 16px 36px 16px 28px;
       cursor: pointer;
-      background-color: #f1c27d; /* Natural skin tone */
+      background-color: #f1c27d;
       border: 3px solid #e0ac69;
-      color: #3d2314; /* Deep brown text for contrast */
-      
-      /* Organic hand/pointer badge shaping */
+      color: #3d2314;
       border-radius: 40px 15px 40px 40px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.4);
-      
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
       display: inline-flex;
       align-items: center;
       gap: 10px;
-      transition: transform 0.2s ease, background-color 0.2s ease;
     }
 
-    #start-btn:active {
-      transform: scale(0.95);
-      background-color: #e0ac69;
+    /* Fallback Blow Button */
+    #tap-blow-btn {
+      display: none; /* Hidden by default */
+      margin-top: 20px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      padding: 12px 24px;
+      cursor: pointer;
+      background-color: #ff4081;
+      border: none;
+      border-radius: 25px;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(255, 64, 129, 0.4);
     }
 
-    /* Step 2 Blow Screen styling - Pure Black Text */
+    /* Black Text Styling */
     .step2-title {
       color: #000000;
       font-size: 2rem;
       font-weight: 800;
       margin-bottom: 10px;
-      text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.6);
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
     }
 
     .candle { font-size: 6rem; margin: 15px 0; }
@@ -79,34 +83,34 @@
 </head>
 <body>
 
-  <!-- VIDEOS LAYER -->
+  <!-- VIDEOS -->
   <video id="video1" class="video-player active" autoplay loop muted playsinline src="video1.mp4?v=2"></video>
   <video id="video2" class="video-player" playsinline src="video2.mp4"></video>
   <video id="video3" class="video-player" playsinline src="video3.mp4"></video>
 
-  <!-- OVERLAY CONTENT LAYER -->
+  <!-- OVERLAY -->
   <div class="content-overlay">
-    <!-- Step 1: Skin-tone Hand Button -->
+    <!-- Step 1 -->
     <div id="step-1" class="screen active">
       <button id="start-btn">
         <span>👆</span> touch here princess 🐧
       </button>
     </div>
 
-    <!-- Step 2: Candle Blowing Screen (Black Text) -->
+    <!-- Step 2 -->
     <div id="step-2" class="screen">
       <h2 class="step2-title">Blow on your microphone! 🌬️</h2>
       <div class="candle">🎂</div>
       <p id="status">Listening for blow...</p>
+      
+      <!-- Hidden until mic permission is denied -->
+      <button id="tap-blow-btn">Tap here to blow 🌬️</button>
     </div>
   </div>
 
   <script>
-    if (window.location.hash) {
-      window.location.href = window.location.pathname;
-    }
-
     const startBtn = document.getElementById('start-btn');
+    const tapBlowBtn = document.getElementById('tap-blow-btn');
     const step1 = document.getElementById('step-1');
     const step2 = document.getElementById('step-2');
     const statusText = document.getElementById('status');
@@ -115,7 +119,6 @@
     const video2 = document.getElementById('video2');
     const video3 = document.getElementById('video3');
 
-    // Step 1 Click -> Show Candle Screen & Unmute Video 1
     startBtn.addEventListener('click', () => {
       step1.classList.remove('active');
       step2.classList.add('active');
@@ -124,10 +127,13 @@
       startMicDetection();
     });
 
-    // Step 2: Microphone Blow Detection
     async function startMicDetection() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        // Permission GRANTED: Hide fallback button
+        tapBlowBtn.style.display = 'none';
+
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
         const analyser = audioContext.createAnalyser();
         const microphone = audioContext.createMediaStreamSource(stream);
@@ -157,15 +163,22 @@
         }
 
         checkBlow();
+
       } catch (err) {
-        statusText.innerText = "Microphone access blocked. Click screen to proceed.";
-        document.body.addEventListener('click', () => {
-          playVideoSequence();
-        }, { once: true });
+        // Permission DENIED: Reveal the tap button
+        statusText.innerText = "Microphone access blocked.";
+        tapBlowBtn.style.display = 'inline-block';
       }
     }
 
-    // Step 3 & 4: Video 2 -> Video 3
+    // Manual tap fallback trigger
+    tapBlowBtn.addEventListener('click', () => {
+      statusText.innerText = "Candle blown!";
+      setTimeout(() => {
+        playVideoSequence();
+      }, 300);
+    });
+
     function playVideoSequence() {
       step2.classList.remove('active');
       video1.classList.remove('active');
