@@ -4,89 +4,96 @@
   <meta charset="UTF-8">
   <title>Make a Wish</title>
   <style>
-    /* 1. Basic Setup & Typography */
     body {
-      margin: 0; background: #0c0c14; color: #fff;
+      margin: 0; background: #000; color: #fff;
       font-family: system-ui, sans-serif; display: flex;
       justify-content: center; align-items: center;
-      height: 100vh; text-align: center; overflow: hidden; /* Hide scrollbars */
+      height: 100vh; text-align: center; overflow: hidden;
     }
 
-    /* 2. Style for the Background Video */
-    .bg-video {
-      position: fixed; /* Fixed position, stays in place */
+    /* Video Player (Full Screen) */
+    .video-player {
+      position: fixed;
       top: 0; left: 0;
-      width: 100%; height: 100%;
-      object-fit: cover; /* Cover the whole screen */
-      z-index: -100; /* Place behind everything */
-      opacity: 0.7; /* Optional: Slight dim for better text contrast */
+      width: 100vw; height: 100vh;
+      object-fit: cover;
+      display: none;
+      z-index: 1;
     }
 
-    /* 3. Style for the Interactive Elements */
-    .screen { display: none; z-index: 10; /* Ensure content is above video */ }
-    .active { display: block; }
+    .video-player.active { display: block; }
+    
+    /* Overlay Content (Text & Cake) */
+    .content-overlay {
+      position: relative;
+      z-index: 10;
+    }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
 
     #start-btn {
       font-size: 1.4rem; padding: 16px 32px; cursor: pointer;
       background: #ff4081; border: none; border-radius: 30px; color: white;
       box-shadow: 0 4px 15px rgba(255, 64, 129, 0.4);
-      transition: all 0.2s ease;
     }
-    #start-btn:hover { background: #e91e63; }
 
-    .cake-wrapper {
-      position: relative;
-      display: inline-block;
-      margin: 20px 0;
-    }
-    
-    .candle { font-size: 6rem; } /* Large cake emoji */
-    
-    #status { font-size: 1.1rem; color: #aaa; margin-top: 10px; }
+    .candle { font-size: 6rem; margin: 20px 0; }
+    #status { font-size: 1.1rem; color: #ddd; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
   </style>
 </head>
 <body>
 
-  <!-- Background Video 1 -->
-  <!-- Crucial: 'autoplay' ensures it plays on load, 'loop' keeps it going, 'muted' bypasses browser blocks -->
-  <video id="video1" class="bg-video" autoplay loop muted playsinline src="video1.mp4"></video>
+  <!-- VIDEOS LAYER -->
+  <!-- Video 1 plays in background for Steps 1 & 2 -->
+  <video id="video1" class="video-player active" autoplay loop muted playsinline src="video1.mp4"></video>
+  <video id="video2" class="video-player" playsinline src="video2.mp4"></video>
+  <video id="video3" class="video-player" playsinline src="video3.mp4"></video>
 
-  <!-- Step 1: Start Button -->
-  <div id="step-1" class="screen active">
-    <button id="start-btn">touch here princess 🐧</button>
-  </div>
-
-  <!-- Step 2: Interactive Blow Screen (With Background Video 1 Playing) -->
-  <div id="step-2" class="screen">
-    <h2>Blow on your microphone! 🌬️</h2>
-    <div class="cake-wrapper">
-      <div class="candle">🎂</div>
+  <!-- OVERLAY CONTENT LAYER -->
+  <div class="content-overlay">
+    <!-- Step 1: Start Button -->
+    <div id="step-1" class="screen active">
+      <button id="start-btn">touch here princess 🐧</button>
     </div>
-    <p id="status">Listening for blow...</p>
+
+    <!-- Step 2: Candle Blowing Screen -->
+    <div id="step-2" class="screen">
+      <h2>Blow on your microphone! 🌬️</h2>
+      <div class="candle">🎂</div>
+      <p id="status">Listening for blow...</p>
+    </div>
   </div>
 
   <script>
+    // Always reset URL to root on reload so it never stays stuck on a sub-page
+    if (window.location.hash) {
+      window.location.href = window.location.pathname;
+    }
+
     const startBtn = document.getElementById('start-btn');
     const step1 = document.getElementById('step-1');
     const step2 = document.getElementById('step-2');
     const statusText = document.getElementById('status');
-    const bgVideo1 = document.getElementById('video1');
 
-    // Button Click: Show Candle Screen
+    const video1 = document.getElementById('video1');
+    const video2 = document.getElementById('video2');
+    const video3 = document.getElementById('video3');
+
+    // Step 1 Click -> Show Candle Screen & Unmute Video 1
     startBtn.addEventListener('click', () => {
       step1.classList.remove('active');
       step2.classList.add('active');
       
-      // Attempt to ensure Video 1 is unmuted after interaction (for iOS)
-      bgVideo1.muted = false;
-
-      // Start the actual blow detection
+      // Try to unmute Video 1 now that the user interacted
+      video1.muted = false;
+      
       startMicDetection();
     });
 
+    // Step 2: Microphone Blow Detection
     async function startMicDetection() {
       try {
-        // Request microphone access
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
         const analyser = audioContext.createAnalyser();
@@ -94,28 +101,24 @@
         
         analyser.fftSize = 256;
         microphone.connect(analyser);
-
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
         function checkBlow() {
           analyser.getByteFrequencyData(dataArray);
-          
-          // Calculate average volume level
           let sum = 0;
           for (let i = 0; i < dataArray.length; i++) {
             sum += dataArray[i];
           }
           let average = sum / dataArray.length;
 
-          // Threshold for blowing (adjust 45 if too sensitive or hard)
+          // Blow threshold reached
           if (average > 45) {
-            statusText.innerText = "Candle blown! Redirecting...";
-            stream.getTracks().forEach(track => track.stop()); // Stop mic
+            statusText.innerText = "Candle blown!";
+            stream.getTracks().forEach(track => track.stop()); // Turn off mic
             
-            // Redirect after a short delay
             setTimeout(() => {
-              window.location.href = "videos.html";
-            }, 600);
+              playVideoSequence();
+            }, 500);
             return;
           }
           requestAnimationFrame(checkBlow);
@@ -123,9 +126,37 @@
 
         checkBlow();
       } catch (err) {
-        statusText.innerText = "Microphone access denied. You can't blow the candle.";
-        // On mobile, you might want a manual skip button here as a fallback
+        statusText.innerText = "Microphone access blocked. Click screen to proceed.";
+        document.body.addEventListener('click', () => {
+          playVideoSequence();
+        }, { once: true });
       }
+    }
+
+    // Step 3 & 4: Transition to Video 2, then Video 3
+    function playVideoSequence() {
+      // Hide text overlays and stop Video 1
+      step2.classList.remove('active');
+      video1.classList.remove('active');
+      video1.pause();
+
+      // Start Video 2 with audio
+      video2.classList.add('active');
+      video2.currentTime = 0;
+      video2.play();
+
+      // When Video 2 Ends -> Play Video 3
+      video2.addEventListener('ended', () => {
+        video2.classList.remove('active');
+        video3.classList.add('active');
+        video3.currentTime = 0;
+        video3.play();
+      });
+
+      // When Video 3 Ends -> Pause on last frame (No Loop)
+      video3.addEventListener('ended', () => {
+        video3.pause();
+      });
     }
   </script>
 </body>
